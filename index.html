@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quét Mã QR Lưu Sheet</title>
+</head>
+<body>
+  <h2>Quét Mã QR</h2>
+  <input type="text" id="qrInput" placeholder="Nhập hoặc quét mã QR ở đây">
+  <button onclick="sendData()">Gửi dữ liệu</button>
+  <p id="status"></p>
+
+  <script>
+    const GAS_URL = https://script.google.com/macros/s/AKfycby1sVaLE3ERRRBcXk_V_a255ejaTbd_hgAIO56iPiFVp6hp7lgdGSXajh1nkKEEtEoMVw/exec; // Dán Web App URL vào đây
+
+    function sendData() {
+      const codeVal = document.getElementById('qrInput').value;
+      const statusEl = document.getElementById('status');
+      if (!codeVal) return;
+
+      statusEl.innerText = "Đang gửi...";
+
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors", // Bắt buộc khi gọi Apps Script từ tên miền ngoài
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeVal })
+      })
+      .then(() => {
+        statusEl.innerText = "Đã gửi thành công!";
+        document.getElementById('qrInput').value = "";
+      })
+      .catch(err => {
+        statusEl.innerText = "Lỗi khi gửi dữ liệu";
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>
