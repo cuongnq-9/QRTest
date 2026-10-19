@@ -206,17 +206,47 @@ function hhmmss(ts) {
   return d.toLocaleTimeString("vi-VN", { hour12: false });
 }
 
+/* ---------- Âm thanh ----------
+   ok    : "tít" ngắn – vừa quét được mã
+   saved : "ting-tinh" 2 nốt đi lên – máy chủ đã lưu thành công vào sheet
+   warn  : 2 tiếng trầm – mã trùng
+   err   : 1 tiếng trầm dài – lỗi                                      */
+const SOUND_VOLUME = 0.6;   // 0.1 (nhỏ) → 1 (to nhất)
+const SOUNDS = {
+  ok:    [{ f: 1500, d: 0.09, type: "square" }],
+  saved: [{ f: 1046, d: 0.12, type: "sine" }, { f: 1568, d: 0.22, type: "sine", gap: 0.03 }],
+  warn:  [{ f: 520, d: 0.15, type: "square" }, { f: 520, d: 0.15, type: "square", gap: 0.08 }],
+  err:   [{ f: 220, d: 0.5, type: "sawtooth" }]
+};
+const VIBRATE = { ok: 60, saved: [40, 40, 40], warn: [150, 80, 150], err: [400] };
+
 let audioCtx = null;
-function beep(kind) {   // "ok" | "warn" | "err"
+function unlockAudio() {      // trình duyệt chỉ cho phát âm thanh sau khi người dùng bấm
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.frequency.value = kind === "ok" ? 1200 : kind === "warn" ? 600 : 300;
-    o.connect(g); g.connect(audioCtx.destination);
-    g.gain.value = 0.2;
-    o.start(); o.stop(audioCtx.currentTime + (kind === "ok" ? 0.12 : 0.35));
+    if (audioCtx.state === "suspended") audioCtx.resume();
   } catch (e) {}
-  if (navigator.vibrate) navigator.vibrate(kind === "ok" ? 80 : [200, 100, 200]);
+}
+document.addEventListener("click", unlockAudio);
+document.addEventListener("touchstart", unlockAudio);
+
+function beep(kind) {
+  unlockAudio();
+  try {
+    let t = audioCtx.currentTime;
+    (SOUNDS[kind] || SOUNDS.ok).forEach(n => {
+      t += n.gap || 0;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = n.type;
+      o.frequency.value = n.f;
+      g.gain.setValueAtTime(SOUND_VOLUME, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + n.d);   // tắt dần cho êm tai
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + n.d);
+      t += n.d;
+    });
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(VIBRATE[kind] || 60);
 }
 
 /* ---------- Đăng nhập ---------- */
@@ -321,7 +351,7 @@ async function openScanner(mode) {
   renderHistory();
   setStatus("Đang mở camera...");
   show("scrScan");
-  beep("ok");  // mở khóa âm thanh trên iPhone
+  unlockAudio();  // mở khóa âm thanh trên iPhone
 
   try {
     qr = new Html5Qrcode("reader");
@@ -417,13 +447,18 @@ async function flush() {
     }
     if (!r.results) throw new Error(r.message || "Lỗi máy chủ");
 
+    let nOk = 0, nDup = 0, nErr = 0;
     r.results.forEach(res => {
       const it = items.find(i => i.id === res.id);
       if (!it) return;
-      if (res.result === "Success") { it.state = "ok"; it.msg = ""; }
-      else if (res.result === "Duplicate") { it.state = "dup"; it.msg = res.message; beep("warn"); }
-      else { it.state = "err"; it.msg = res.message; beep("err"); }
+      if (res.result === "Success") { it.state = "ok"; it.msg = ""; nOk++; }
+      else if (res.result === "Duplicate") { it.state = "dup"; it.msg = res.message; nDup++; }
+      else { it.state = "err"; it.msg = res.message; nErr++; }
     });
+    // Mỗi lượt gửi chỉ phát 1 âm báo, ưu tiên báo lỗi/trùng để không bị bỏ sót
+    if (nErr) { beep("err"); setStatus("✖ " + nErr + " mã lỗi – xem danh sách bên dưới", "err"); }
+    else if (nDup) { beep("warn"); setStatus("⚠ " + nDup + " mã trùng – xem danh sách bên dưới", "warn"); }
+    else if (nOk) { setTimeout(() => beep("saved"), 150); }
     setNet(true);
   } catch (e) {
     setNet(false);
