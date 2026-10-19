@@ -7,7 +7,6 @@
 <title>Quét QR - An Nam NT</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  
   :root {
     --primary: #0b5394; --xuat: #e67e22; --giao: #16a085;
     --ok: #1e8e3e; --warn: #f29900; --err: #d93025;
@@ -18,11 +17,11 @@
          background: var(--bg); color: var(--text); }
   .screen { display: none; min-height: 100vh; padding: 16px; max-width: 480px; margin: auto; }
   .screen.active { display: block; }
-  .card { background: var(--card); border-radius: 14px; padding: 20px;
+  .card { background: var(--card); border-radius: 14px; padding: 18px;
           box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 14px; }
   h1 { font-size: 22px; margin: 0 0 4px; color: var(--primary); }
-  h2 { font-size: 18px; margin: 0; }
-  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  h2 { font-size: 18px; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
   label { font-size: 14px; color: var(--muted); display: block; margin: 12px 0 6px; }
   input { width: 100%; padding: 13px; font-size: 16px; border: 1px solid #dadce0;
           border-radius: 10px; outline: none; }
@@ -32,45 +31,47 @@
   button:disabled { opacity: .6; }
   .btn-primary { width: 100%; background: var(--primary); color: #fff; margin-top: 18px; }
   .btn-light { background: #e8eaed; color: var(--text); padding: 10px 14px; font-size: 14px; }
+  .btn-link { background: none; color: var(--primary); padding: 8px 0; font-size: 15px; }
   .msg { margin-top: 12px; font-size: 14px; min-height: 18px; }
   .err { color: var(--err); } .ok { color: var(--ok); } .warn { color: var(--warn); }
 
-  /* Header */
   .topbar { display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 14px; gap: 8px; }
   .user { font-size: 14px; color: var(--muted); }
   .user b { color: var(--text); }
 
-  /* Menu */
-  .mode-btn { width: 100%; height: 140px; color: #fff; font-size: 24px; margin-bottom: 14px;
+  .mode-btn { width: 100%; height: 130px; color: #fff; font-size: 24px; margin-bottom: 14px;
               border-radius: 16px; display: flex; flex-direction: column;
               align-items: center; justify-content: center; gap: 6px; }
   .mode-btn small { font-size: 14px; font-weight: 400; opacity: .9; }
   .mode-btn.xuat { background: var(--xuat); }
   .mode-btn.giao { background: var(--giao); }
 
-  /* Scanner */
   .mode-tag { color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 700; }
   #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
-  #reader video { border-radius: 12px; }
-  .status { padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600;
-            text-align: center; margin: 12px 0; background: #e8eaed; }
+  .status { padding: 12px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            text-align: center; margin: 12px 0; background: #e8eaed; word-break: break-all; }
   .status.ok { background: #e6f4ea; } .status.warn { background: #fef7e0; }
   .status.err { background: #fce8e6; }
   .row { display: flex; gap: 8px; }
   .row input { flex: 1; }
   .row button { background: var(--primary); color: #fff; padding: 0 16px; }
-  .counter { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-  ul.history { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow: auto; }
-  ul.history li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px;
-                  display: flex; justify-content: space-between; gap: 8px; }
-  ul.history li span:first-child { word-break: break-all; }
-  ul.history li .t { color: var(--muted); white-space: nowrap; }
+
+  .stats { display: flex; justify-content: space-between; font-size: 14px;
+           color: var(--muted); margin-bottom: 6px; }
+  .stats b { color: var(--text); }
+  .net { font-size: 13px; }
+  ul.history { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow: auto; }
+  ul.history li { padding: 9px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+  ul.history .l1 { display: flex; justify-content: space-between; gap: 8px; }
+  ul.history .code { word-break: break-all; font-weight: 600; }
+  ul.history .t { color: var(--muted); white-space: nowrap; }
+  ul.history .l2 { font-size: 13px; margin-top: 2px; }
 </style>
 </head>
 <body>
 
-<!-- ============ 1. ĐĂNG NHẬP ============ -->
+<!-- ============ ĐĂNG NHẬP ============ -->
 <div id="scrLogin" class="screen active">
   <div class="card" style="margin-top:12vh">
     <h1>An Nam NT</h1>
@@ -84,7 +85,7 @@
   </div>
 </div>
 
-<!-- ============ 2. CHỌN CHỨC NĂNG ============ -->
+<!-- ============ CHỌN CHỨC NĂNG ============ -->
 <div id="scrMenu" class="screen">
   <div class="topbar">
     <div class="user">Xin chào, <b id="lblName"></b></div>
@@ -92,14 +93,36 @@
   </div>
   <p class="sub">Chọn chức năng:</p>
   <button class="mode-btn xuat" onclick="openScanner('XUAT')">
-    📦 XUẤT HÀNG <small>Quét khi hàng rời kho</small>
+    📦 XUẤT HÀNG <small>Trạng thái: Đang giao</small>
   </button>
   <button class="mode-btn giao" onclick="openScanner('GIAO')">
-    🚚 GIAO HÀNG <small>Quét khi giao cho khách</small>
+    🚚 GIAO HÀNG <small>Trạng thái: Đã giao</small>
   </button>
+  <div id="menuPending" class="sub" style="text-align:center"></div>
+  <div style="text-align:center">
+    <button class="btn-link" onclick="openChangePw()">🔑 Đổi mật khẩu</button>
+  </div>
 </div>
 
-<!-- ============ 3. QUÉT QR ============ -->
+<!-- ============ ĐỔI MẬT KHẨU ============ -->
+<div id="scrPw" class="screen">
+  <div class="topbar">
+    <button class="btn-light" onclick="goMenu()">← Quay lại</button>
+  </div>
+  <div class="card">
+    <h2>Đổi mật khẩu</h2>
+    <label>Mật khẩu hiện tại</label>
+    <input id="pwOld" type="password" autocomplete="current-password">
+    <label>Mật khẩu mới</label>
+    <input id="pwNew" type="password" autocomplete="new-password">
+    <label>Nhập lại mật khẩu mới</label>
+    <input id="pwNew2" type="password" autocomplete="new-password">
+    <button id="btnPw" class="btn-primary" onclick="doChangePw()">Lưu mật khẩu mới</button>
+    <div id="pwMsg" class="msg"></div>
+  </div>
+</div>
+
+<!-- ============ QUÉT QR ============ -->
 <div id="scrScan" class="screen">
   <div class="topbar">
     <button class="btn-light" onclick="backToMenu()">← Quay lại</button>
@@ -110,39 +133,44 @@
   <div id="scanStatus" class="status">Đưa mã QR vào khung hình</div>
 
   <div class="card">
-    <label style="margin-top:0">Ghi chú (tùy chọn, áp dụng cho lần quét kế tiếp)</label>
-    <input id="inNote" placeholder="VD: thiếu 1 thùng, khách hẹn chiều...">
-    <label>Nhập mã thủ công (khi mã bị mờ)</label>
+    <label style="margin-top:0">Ghi chú</label>
+    <input id="inNote">
+    <label>Nhập mã thủ công</label>
     <div class="row">
-      <input id="inManual" placeholder="Nhập mã...">
-      <button onclick="submitManual()">Gửi</button>
+      <input id="inManual" autocapitalize="characters">
+      <button onclick="submitManual()">Thêm</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="counter">Đã quét phiên này: <b id="cnt">0</b></div>
+    <div class="stats">
+      <span>Đã quét: <b id="cntAll">0</b> · Chờ gửi: <b id="cntPending">0</b></span>
+      <span id="net" class="net"></span>
+    </div>
     <ul id="history" class="history"></ul>
   </div>
 </div>
 
 <script>
 /* ===== CẤU HÌNH: dán URL Web App (đuôi /exec) vào đây ===== */
-const API_URL = "https://script.google.com/macros/s/AKfycby1sVaLE3ERRRBcXk_V_a255ejaTbd_hgAIO56iPiFVp6hp7lgdGSXajh1nkKEEtEoMVw/exec";
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE";
 
 const MODES = {
   XUAT: { label: "📦 XUẤT HÀNG", color: "var(--xuat)" },
   GIAO: { label: "🚚 GIAO HÀNG", color: "var(--giao)" }
 };
+const SAME_CODE_COOLDOWN = 2500;   // ms: bỏ qua camera đọc lại cùng 1 mã liên tục
+const BATCH_SIZE = 20;
 
-let session = null;      // { token, username, name }
+let session = null;          // { token, username, name }
 let currentMode = null;
 let qr = null;
-let busy = false;
+let items = [];              // { id, user, mode, code, note, ts, state: pending|ok|dup|err, msg }
+let sending = false;
 let lastCode = "", lastTime = 0;
-let count = 0;
 
 /* ---------- Tiện ích ---------- */
-function $(id) { return document.getElementById(id); }
+const $ = id => document.getElementById(id);
 
 function show(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -153,19 +181,19 @@ function show(id) {
 async function api(data) {
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },  // tránh lỗi CORS
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(data)
   });
   return res.json();
 }
 
-function saveSession(s) {
-  try { s ? localStorage.setItem("qr_session", JSON.stringify(s))
-          : localStorage.removeItem("qr_session"); } catch (e) {}
+function store(key, val) {
+  try { val == null ? localStorage.removeItem(key) : localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
 }
-function loadSession() {
-  try { return JSON.parse(localStorage.getItem("qr_session")); } catch (e) { return null; }
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
 }
+function saveQueue() { store("qr_queue", items.filter(i => i.state === "pending")); }
 
 function setStatus(text, type) {
   const el = $("scanStatus");
@@ -173,21 +201,25 @@ function setStatus(text, type) {
   el.className = "status " + (type || "");
 }
 
-// Âm báo + rung
+function hhmmss(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString("vi-VN", { hour12: false });
+}
+
 let audioCtx = null;
-function beep(ok) {
+function beep(kind) {   // "ok" | "warn" | "err"
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.frequency.value = ok ? 1200 : 300;
+    o.frequency.value = kind === "ok" ? 1200 : kind === "warn" ? 600 : 300;
     o.connect(g); g.connect(audioCtx.destination);
     g.gain.value = 0.2;
-    o.start(); o.stop(audioCtx.currentTime + (ok ? 0.15 : 0.4));
+    o.start(); o.stop(audioCtx.currentTime + (kind === "ok" ? 0.12 : 0.35));
   } catch (e) {}
-  if (navigator.vibrate) navigator.vibrate(ok ? 100 : [200, 100, 200]);
+  if (navigator.vibrate) navigator.vibrate(kind === "ok" ? 80 : [200, 100, 200]);
 }
 
-/* ---------- 1. Đăng nhập ---------- */
+/* ---------- Đăng nhập ---------- */
 $("btnLogin").onclick = doLogin;
 $("inPass").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
 
@@ -203,49 +235,99 @@ async function doLogin() {
     const r = await api({ action: "login", username, password });
     if (r.result === "Success") {
       session = { token: r.token, username: r.username, name: r.name };
-      saveSession(session);
+      store("qr_session", session);
       $("inPass").value = "";
       msg.textContent = "";
+      // Chỉ giữ hàng chờ của đúng người này
+      items = items.filter(i => i.user === session.username);
+      saveQueue();
       goMenu();
+      flush();
     } else {
       msg.className = "msg err"; msg.textContent = r.message || "Đăng nhập thất bại";
     }
   } catch (e) {
-    msg.className = "msg err"; msg.textContent = "Không kết nối được máy chủ: " + e;
+    msg.className = "msg err"; msg.textContent = "Không kết nối được máy chủ";
   }
   $("btnLogin").disabled = false;
 }
 
-function logout(message) {
-  stopCamera();
+async function logout(message, keepQueue) {
+  const pending = items.filter(i => i.state === "pending").length;
+  if (!keepQueue && pending &&
+      !confirm("Còn " + pending + " mã chưa gửi lên hệ thống. Đăng xuất sẽ HỦY các mã này. Tiếp tục?")) return;
+
+  await stopCamera();
+  if (!keepQueue) { items = []; saveQueue(); }
   session = null;
-  saveSession(null);
+  store("qr_session", null);
   show("scrLogin");
-  if (message) { $("loginMsg").className = "msg err"; $("loginMsg").textContent = message; }
+  $("loginMsg").className = "msg err";
+  $("loginMsg").textContent = message || "";
 }
 
-/* ---------- 2. Menu ---------- */
+/* ---------- Menu ---------- */
 function goMenu() {
   $("lblName").textContent = session.name;
+  updateMenuPending();
   show("scrMenu");
 }
+function updateMenuPending() {
+  const n = items.filter(i => i.state === "pending").length;
+  $("menuPending").textContent = n ? "⏳ Còn " + n + " mã đang chờ gửi" : "";
+}
 
-/* ---------- 3. Quét ---------- */
+/* ---------- Đổi mật khẩu ---------- */
+function openChangePw() {
+  ["pwOld", "pwNew", "pwNew2"].forEach(id => $(id).value = "");
+  $("pwMsg").textContent = "";
+  show("scrPw");
+}
+
+async function doChangePw() {
+  const oldPassword = $("pwOld").value.trim();
+  const newPassword = $("pwNew").value.trim();
+  const msg = $("pwMsg");
+  msg.className = "msg err";
+  if (!oldPassword || !newPassword) { msg.textContent = "Vui lòng nhập đủ thông tin"; return; }
+  if (newPassword !== $("pwNew2").value.trim()) { msg.textContent = "Mật khẩu nhập lại không khớp"; return; }
+
+  $("btnPw").disabled = true;
+  msg.className = "msg"; msg.textContent = "Đang lưu...";
+  try {
+    const r = await api({ action: "changePassword", token: session.token, oldPassword, newPassword });
+    if (r.result === "Success") {
+      session.token = r.token;
+      store("qr_session", session);
+      msg.className = "msg ok"; msg.textContent = "✔ Đổi mật khẩu thành công";
+      setTimeout(goMenu, 1200);
+    } else if (r.result === "Auth") {
+      logout(r.message, true);
+    } else {
+      msg.className = "msg err"; msg.textContent = r.message;
+    }
+  } catch (e) {
+    msg.className = "msg err"; msg.textContent = "Không kết nối được máy chủ";
+  }
+  $("btnPw").disabled = false;
+}
+
+/* ---------- Quét ---------- */
 async function openScanner(mode) {
   currentMode = mode;
   $("modeTag").textContent = MODES[mode].label;
   $("modeTag").style.background = MODES[mode].color;
-  $("history").innerHTML = "";
-  count = 0; $("cnt").textContent = "0";
+  $("inNote").value = "";
+  renderHistory();
   setStatus("Đang mở camera...");
   show("scrScan");
-  beep(true); // "mở khóa" âm thanh trên iPhone nhờ thao tác bấm của người dùng
+  beep("ok");  // mở khóa âm thanh trên iPhone
 
   try {
     qr = new Html5Qrcode("reader");
     await qr.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+      { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
       onScan
     );
     setStatus("Đưa mã QR vào khung hình");
@@ -268,74 +350,127 @@ async function backToMenu() {
 
 function onScan(code) {
   const now = Date.now();
-  if (busy) return;
-  if (code === lastCode && now - lastTime < 4000) return;  // bỏ qua mã vừa quét trong 4 giây
+  if (code === lastCode && now - lastTime < SAME_CODE_COOLDOWN) return;
   lastCode = code; lastTime = now;
-  sendCode(code);
+  addCode(code);
 }
 
 function submitManual() {
   const code = $("inManual").value.trim();
   if (!code) return;
   $("inManual").value = "";
-  sendCode(code);
+  addCode(code);
 }
+$("inManual").addEventListener("keydown", e => { if (e.key === "Enter") submitManual(); });
 
-async function sendCode(code) {
-  busy = true;
-  try { if (qr && qr.isScanning) qr.pause(true); } catch (e) {}
-  setStatus("Đang gửi: " + code);
+// Thêm mã vào hàng chờ ngay lập tức — không đợi máy chủ
+function addCode(raw) {
+  const code = String(raw).trim();
+  if (!code) return;
 
-  try {
-    const r = await api({
-      action: "scan",
-      token: session.token,
-      mode: currentMode,
-      code: code,
-      note: $("inNote").value,
-      device: navigator.userAgent
-    });
-
-    if (r.result === "Success") {
-      beep(true);
-      setStatus("✔ Đã ghi: " + code, "ok");
-      $("inNote").value = "";
-      addHistory(code, r.time);
-    } else if (r.result === "Duplicate") {
-      beep(false);
-      setStatus("⚠ " + code + " — " + r.message, "warn");
-    } else if (r.result === "Auth") {
-      beep(false);
-      return logout(r.message);
-    } else {
-      beep(false);
-      setStatus("✖ " + (r.message || "Lỗi không xác định"), "err");
-    }
-  } catch (e) {
-    beep(false);
-    setStatus("✖ Lỗi kết nối, vui lòng quét lại", "err");
-    lastCode = ""; // cho phép quét lại ngay
+  const exists = items.find(i => i.code === code && i.mode === currentMode && i.state !== "err");
+  if (exists) {
+    beep("warn");
+    setStatus("⚠ Đã quét rồi: " + code, "warn");
+    return;
   }
 
-  setTimeout(() => {
-    busy = false;
-    try { if (qr) qr.resume(); } catch (e) {}
-  }, 1200);
+  items.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    user: session.username,
+    mode: currentMode,
+    code: code,
+    note: $("inNote").value.trim(),
+    ts: Date.now(),
+    state: "pending",
+    msg: ""
+  });
+  if (items.length > 500) items.length = 500;
+
+  $("inNote").value = "";
+  beep("ok");
+  setStatus("✔ " + code, "ok");
+  saveQueue();
+  renderHistory();
+  flush();
 }
 
-function addHistory(code, time) {
-  count++;
-  $("cnt").textContent = count;
-  const li = document.createElement("li");
-  li.innerHTML = `<span></span><span class="t"></span>`;
-  li.children[0].textContent = code;
-  li.children[1].textContent = time || "";
-  $("history").prepend(li);
+/* ---------- Gửi nền theo lô ---------- */
+async function flush() {
+  if (sending || !session) return;
+  const batch = items.filter(i => i.state === "pending").slice(-BATCH_SIZE).reverse(); // gửi mã cũ trước
+  if (!batch.length) return;
+
+  sending = true;
+  let retryDelay = 0;
+  try {
+    const r = await api({
+      action: "scanBatch",
+      token: session.token,
+      items: batch.map(i => ({ id: i.id, mode: i.mode, code: i.code, note: i.note, ts: i.ts }))
+    });
+
+    if (r.result === "Auth") {
+      sending = false;
+      saveQueue();
+      return logout(r.message + " (các mã chưa gửi vẫn được giữ lại)", true);
+    }
+    if (!r.results) throw new Error(r.message || "Lỗi máy chủ");
+
+    r.results.forEach(res => {
+      const it = items.find(i => i.id === res.id);
+      if (!it) return;
+      if (res.result === "Success") { it.state = "ok"; it.msg = ""; }
+      else if (res.result === "Duplicate") { it.state = "dup"; it.msg = res.message; beep("warn"); }
+      else { it.state = "err"; it.msg = res.message; beep("err"); }
+    });
+    setNet(true);
+  } catch (e) {
+    setNet(false);
+    retryDelay = 4000;
+  }
+  sending = false;
+  saveQueue();
+  renderHistory();
+  updateMenuPending();
+
+  if (items.some(i => i.state === "pending")) setTimeout(flush, retryDelay || 200);
 }
 
-/* ---------- Khởi động: giữ đăng nhập nếu còn phiên ---------- */
-session = loadSession();
-if (session && session.token) goMenu();
+setInterval(flush, 10000);                      // thử gửi lại định kỳ
+window.addEventListener("online", flush);       // có mạng lại thì gửi ngay
+
+function setNet(ok) {
+  $("net").innerHTML = ok ? '<span class="ok">● Đã kết nối</span>' : '<span class="err">● Mất kết nối – sẽ tự gửi lại</span>';
+}
+
+/* ---------- Danh sách ---------- */
+function renderHistory() {
+  const list = items.filter(i => i.mode === currentMode);
+  $("cntAll").textContent = list.length;
+  $("cntPending").textContent = list.filter(i => i.state === "pending").length;
+
+  const icon = { pending: "⏳ Đang gửi", ok: "✔ Đã lưu", dup: "⚠ Trùng", err: "✖ Lỗi" };
+  const cls  = { pending: "", ok: "ok", dup: "warn", err: "err" };
+
+  const ul = $("history");
+  ul.innerHTML = "";
+  list.slice(0, 100).forEach(i => {
+    const li = document.createElement("li");
+    li.innerHTML = '<div class="l1"><span class="code"></span><span class="t"></span></div><div class="l2"></div>';
+    li.querySelector(".code").textContent = i.code;
+    li.querySelector(".t").textContent = hhmmss(i.ts);
+    const l2 = li.querySelector(".l2");
+    l2.className = "l2 " + cls[i.state];
+    l2.textContent = icon[i.state] + (i.msg ? " – " + i.msg : "") + (i.note ? " · Ghi chú: " + i.note : "");
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- Khởi động ---------- */
+items = load("qr_queue") || [];
+session = load("qr_session");
+if (session && session.token) { goMenu(); flush(); }
 </script>
 </body>
 </html>
