@@ -1,41 +1,340 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quét Mã QR Lưu Sheet</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0b5394">
+<title>Quét QR - An Nam NT</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --primary: #0b5394; --xuat: #e67e22; --giao: #16a085;
+    --ok: #1e8e3e; --warn: #f29900; --err: #d93025;
+    --bg: #f1f4f8; --card: #ffffff; --text: #202124; --muted: #5f6368;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--text); }
+  .screen { display: none; min-height: 100vh; padding: 16px; max-width: 480px; margin: auto; }
+  .screen.active { display: block; }
+  .card { background: var(--card); border-radius: 14px; padding: 20px;
+          box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0 0 4px; color: var(--primary); }
+  h2 { font-size: 18px; margin: 0; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  label { font-size: 14px; color: var(--muted); display: block; margin: 12px 0 6px; }
+  input { width: 100%; padding: 13px; font-size: 16px; border: 1px solid #dadce0;
+          border-radius: 10px; outline: none; }
+  input:focus { border-color: var(--primary); }
+  button { font-size: 16px; border: 0; border-radius: 10px; padding: 14px;
+           cursor: pointer; font-weight: 600; }
+  button:disabled { opacity: .6; }
+  .btn-primary { width: 100%; background: var(--primary); color: #fff; margin-top: 18px; }
+  .btn-light { background: #e8eaed; color: var(--text); padding: 10px 14px; font-size: 14px; }
+  .msg { margin-top: 12px; font-size: 14px; min-height: 18px; }
+  .err { color: var(--err); } .ok { color: var(--ok); } .warn { color: var(--warn); }
+
+  /* Header */
+  .topbar { display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; gap: 8px; }
+  .user { font-size: 14px; color: var(--muted); }
+  .user b { color: var(--text); }
+
+  /* Menu */
+  .mode-btn { width: 100%; height: 140px; color: #fff; font-size: 24px; margin-bottom: 14px;
+              border-radius: 16px; display: flex; flex-direction: column;
+              align-items: center; justify-content: center; gap: 6px; }
+  .mode-btn small { font-size: 14px; font-weight: 400; opacity: .9; }
+  .mode-btn.xuat { background: var(--xuat); }
+  .mode-btn.giao { background: var(--giao); }
+
+  /* Scanner */
+  .mode-tag { color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+  #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
+  #reader video { border-radius: 12px; }
+  .status { padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            text-align: center; margin: 12px 0; background: #e8eaed; }
+  .status.ok { background: #e6f4ea; } .status.warn { background: #fef7e0; }
+  .status.err { background: #fce8e6; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; }
+  .row button { background: var(--primary); color: #fff; padding: 0 16px; }
+  .counter { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  ul.history { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow: auto; }
+  ul.history li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px;
+                  display: flex; justify-content: space-between; gap: 8px; }
+  ul.history li span:first-child { word-break: break-all; }
+  ul.history li .t { color: var(--muted); white-space: nowrap; }
+</style>
 </head>
 <body>
-  <h2>Quét Mã QR</h2>
-  <input type="text" id="qrInput" placeholder="Nhập hoặc quét mã QR ở đây">
-  <button onclick="sendData()">Gửi dữ liệu</button>
-  <p id="status"></p>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby1sVaLE3ERRRBcXk_V_a255ejaTbd_hgAIO56iPiFVp6hp7lgdGSXajh1nkKEEtEoMVw/exec"; // Dán Web App URL vào đây
+<!-- ============ 1. ĐĂNG NHẬP ============ -->
+<div id="scrLogin" class="screen active">
+  <div class="card" style="margin-top:12vh">
+    <h1>An Nam NT</h1>
+    <p class="sub">Đăng nhập để quét mã QR</p>
+    <label>Tài khoản</label>
+    <input id="inUser" autocomplete="username" autocapitalize="none">
+    <label>Mật khẩu</label>
+    <input id="inPass" type="password" autocomplete="current-password">
+    <button id="btnLogin" class="btn-primary">Đăng nhập</button>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+</div>
 
-    function sendData() {
-      const codeVal = document.getElementById('qrInput').value;
-      const statusEl = document.getElementById('status');
-      if (!codeVal) return;
+<!-- ============ 2. CHỌN CHỨC NĂNG ============ -->
+<div id="scrMenu" class="screen">
+  <div class="topbar">
+    <div class="user">Xin chào, <b id="lblName"></b></div>
+    <button class="btn-light" onclick="logout()">Đăng xuất</button>
+  </div>
+  <p class="sub">Chọn chức năng:</p>
+  <button class="mode-btn xuat" onclick="openScanner('XUAT')">
+    📦 XUẤT HÀNG <small>Quét khi hàng rời kho</small>
+  </button>
+  <button class="mode-btn giao" onclick="openScanner('GIAO')">
+    🚚 GIAO HÀNG <small>Quét khi giao cho khách</small>
+  </button>
+</div>
 
-      statusEl.innerText = "Đang gửi...";
+<!-- ============ 3. QUÉT QR ============ -->
+<div id="scrScan" class="screen">
+  <div class="topbar">
+    <button class="btn-light" onclick="backToMenu()">← Quay lại</button>
+    <span id="modeTag" class="mode-tag"></span>
+  </div>
 
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors", // Bắt buộc khi gọi Apps Script từ tên miền ngoài
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codeVal })
-      })
-      .then(() => {
-        statusEl.innerText = "Đã gửi thành công!";
-        document.getElementById('qrInput').value = "";
-      })
-      .catch(err => {
-        statusEl.innerText = "Lỗi khi gửi dữ liệu";
-        console.error(err);
-      });
+  <div id="reader"></div>
+  <div id="scanStatus" class="status">Đưa mã QR vào khung hình</div>
+
+  <div class="card">
+    <label style="margin-top:0">Ghi chú (tùy chọn, áp dụng cho lần quét kế tiếp)</label>
+    <input id="inNote" placeholder="VD: thiếu 1 thùng, khách hẹn chiều...">
+    <label>Nhập mã thủ công (khi mã bị mờ)</label>
+    <div class="row">
+      <input id="inManual" placeholder="Nhập mã...">
+      <button onclick="submitManual()">Gửi</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="counter">Đã quét phiên này: <b id="cnt">0</b></div>
+    <ul id="history" class="history"></ul>
+  </div>
+</div>
+
+<script>
+/* ===== CẤU HÌNH: dán URL Web App (đuôi /exec) vào đây ===== */
+const API_URL = "https://script.google.com/macros/s/AKfycby1sVaLE3ERRRBcXk_V_a255ejaTbd_hgAIO56iPiFVp6hp7lgdGSXajh1nkKEEtEoMVw/exec";
+
+const MODES = {
+  XUAT: { label: "📦 XUẤT HÀNG", color: "var(--xuat)" },
+  GIAO: { label: "🚚 GIAO HÀNG", color: "var(--giao)" }
+};
+
+let session = null;      // { token, username, name }
+let currentMode = null;
+let qr = null;
+let busy = false;
+let lastCode = "", lastTime = 0;
+let count = 0;
+
+/* ---------- Tiện ích ---------- */
+function $(id) { return document.getElementById(id); }
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+async function api(data) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },  // tránh lỗi CORS
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+function saveSession(s) {
+  try { s ? localStorage.setItem("qr_session", JSON.stringify(s))
+          : localStorage.removeItem("qr_session"); } catch (e) {}
+}
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem("qr_session")); } catch (e) { return null; }
+}
+
+function setStatus(text, type) {
+  const el = $("scanStatus");
+  el.textContent = text;
+  el.className = "status " + (type || "");
+}
+
+// Âm báo + rung
+let audioCtx = null;
+function beep(ok) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = ok ? 1200 : 300;
+    o.connect(g); g.connect(audioCtx.destination);
+    g.gain.value = 0.2;
+    o.start(); o.stop(audioCtx.currentTime + (ok ? 0.15 : 0.4));
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(ok ? 100 : [200, 100, 200]);
+}
+
+/* ---------- 1. Đăng nhập ---------- */
+$("btnLogin").onclick = doLogin;
+$("inPass").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+async function doLogin() {
+  const username = $("inUser").value.trim();
+  const password = $("inPass").value.trim();
+  const msg = $("loginMsg");
+  if (!username || !password) { msg.className = "msg err"; msg.textContent = "Vui lòng nhập đủ thông tin"; return; }
+
+  $("btnLogin").disabled = true;
+  msg.className = "msg"; msg.textContent = "Đang đăng nhập...";
+  try {
+    const r = await api({ action: "login", username, password });
+    if (r.result === "Success") {
+      session = { token: r.token, username: r.username, name: r.name };
+      saveSession(session);
+      $("inPass").value = "";
+      msg.textContent = "";
+      goMenu();
+    } else {
+      msg.className = "msg err"; msg.textContent = r.message || "Đăng nhập thất bại";
     }
-  </script>
+  } catch (e) {
+    msg.className = "msg err"; msg.textContent = "Không kết nối được máy chủ: " + e;
+  }
+  $("btnLogin").disabled = false;
+}
+
+function logout(message) {
+  stopCamera();
+  session = null;
+  saveSession(null);
+  show("scrLogin");
+  if (message) { $("loginMsg").className = "msg err"; $("loginMsg").textContent = message; }
+}
+
+/* ---------- 2. Menu ---------- */
+function goMenu() {
+  $("lblName").textContent = session.name;
+  show("scrMenu");
+}
+
+/* ---------- 3. Quét ---------- */
+async function openScanner(mode) {
+  currentMode = mode;
+  $("modeTag").textContent = MODES[mode].label;
+  $("modeTag").style.background = MODES[mode].color;
+  $("history").innerHTML = "";
+  count = 0; $("cnt").textContent = "0";
+  setStatus("Đang mở camera...");
+  show("scrScan");
+  beep(true); // "mở khóa" âm thanh trên iPhone nhờ thao tác bấm của người dùng
+
+  try {
+    qr = new Html5Qrcode("reader");
+    await qr.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+      onScan
+    );
+    setStatus("Đưa mã QR vào khung hình");
+  } catch (e) {
+    setStatus("Không mở được camera. Hãy cấp quyền camera cho trình duyệt rồi thử lại.", "err");
+  }
+}
+
+async function stopCamera() {
+  if (qr) {
+    try { if (qr.isScanning) await qr.stop(); qr.clear(); } catch (e) {}
+    qr = null;
+  }
+}
+
+async function backToMenu() {
+  await stopCamera();
+  goMenu();
+}
+
+function onScan(code) {
+  const now = Date.now();
+  if (busy) return;
+  if (code === lastCode && now - lastTime < 4000) return;  // bỏ qua mã vừa quét trong 4 giây
+  lastCode = code; lastTime = now;
+  sendCode(code);
+}
+
+function submitManual() {
+  const code = $("inManual").value.trim();
+  if (!code) return;
+  $("inManual").value = "";
+  sendCode(code);
+}
+
+async function sendCode(code) {
+  busy = true;
+  try { if (qr && qr.isScanning) qr.pause(true); } catch (e) {}
+  setStatus("Đang gửi: " + code);
+
+  try {
+    const r = await api({
+      action: "scan",
+      token: session.token,
+      mode: currentMode,
+      code: code,
+      note: $("inNote").value,
+      device: navigator.userAgent
+    });
+
+    if (r.result === "Success") {
+      beep(true);
+      setStatus("✔ Đã ghi: " + code, "ok");
+      $("inNote").value = "";
+      addHistory(code, r.time);
+    } else if (r.result === "Duplicate") {
+      beep(false);
+      setStatus("⚠ " + code + " — " + r.message, "warn");
+    } else if (r.result === "Auth") {
+      beep(false);
+      return logout(r.message);
+    } else {
+      beep(false);
+      setStatus("✖ " + (r.message || "Lỗi không xác định"), "err");
+    }
+  } catch (e) {
+    beep(false);
+    setStatus("✖ Lỗi kết nối, vui lòng quét lại", "err");
+    lastCode = ""; // cho phép quét lại ngay
+  }
+
+  setTimeout(() => {
+    busy = false;
+    try { if (qr) qr.resume(); } catch (e) {}
+  }, 1200);
+}
+
+function addHistory(code, time) {
+  count++;
+  $("cnt").textContent = count;
+  const li = document.createElement("li");
+  li.innerHTML = `<span></span><span class="t"></span>`;
+  li.children[0].textContent = code;
+  li.children[1].textContent = time || "";
+  $("history").prepend(li);
+}
+
+/* ---------- Khởi động: giữ đăng nhập nếu còn phiên ---------- */
+session = loadSession();
+if (session && session.token) goMenu();
+</script>
 </body>
 </html>
